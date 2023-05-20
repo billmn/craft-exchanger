@@ -2,10 +2,12 @@
 
 namespace billmn\exchanger;
 
-use Craft;
+use billmn\exchanger\drivers\Driver;
 use billmn\exchanger\models\Settings;
+use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
+use craft\helpers\StringHelper;
 
 /**
  * Exchanger plugin
@@ -58,5 +60,13 @@ class Exchanger extends Plugin
     {
         // Register event handlers here ...
         // (see https://craftcms.com/docs/4.x/extend/events.html to get started)
+    }
+
+    public function driver(string $name): ?Driver
+    {
+        $class = StringHelper::toPascalCase($name);
+        $instance = __NAMESPACE__ . "\\drivers\\{$class}";
+
+        return new $instance();
     }
 }
