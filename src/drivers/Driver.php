@@ -5,16 +5,11 @@ namespace billmn\exchanger\drivers;
 use craft\commerce\models\PaymentCurrency;
 use craft\commerce\Plugin as Commerce;
 use craft\commerce\services\PaymentCurrencies;
-use GuzzleHttp\Client;
+use Illuminate\Support\Collection;
 
 abstract class Driver
 {
     abstract public function getRates(): array;
-
-    public function getClient()
-    {
-        return new Client();
-    }
 
     public function getCurrencyService(): PaymentCurrencies
     {
@@ -41,7 +36,7 @@ abstract class Driver
         return array_keys($this->getNonPrimaryCurrencies());
     }
 
-    public function updateRates(): array
+    public function updateRates(): Collection
     {
         $rates = $this->getRates();
         $updated = [];
@@ -53,11 +48,14 @@ abstract class Driver
                 $currency->rate = $rate;
 
                 if ($this->getCurrencyService()->savePaymentCurrency($currency)) {
-                    $updated[] = $currency->iso;
+                    $updated[] = [
+                        'iso' => $currency->iso,
+                        'rate' => $currency->rate,
+                    ];
                 }
             }
         }
 
-        return $updated;
+        return Collection::make($updated);
     }
 }

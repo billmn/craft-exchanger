@@ -3,22 +3,27 @@
 namespace billmn\exchanger\drivers;
 
 use craft\helpers\Json;
+use Exception;
+use GuzzleHttp\Client;
 
 class ExchangeRate extends Driver
 {
     public function getRates(): array
     {
-        $response = $this->getClient()->get('https://api.exchangerate.host/latest', [
+        $symbols = implode(',', $this->getNonPrimaryCurrenciesIso());
+
+        $response = (new Client())->get('https://api.exchangerate.host/latest', [
             'query' => [
                 'base' => $this->getPrimaryCurrencyIso(),
-                'symbols' => implode(',', $this->getNonPrimaryCurrenciesIso()),
+                'amount' => 1,
+                'symbols' => $symbols,
             ],
         ]);
 
         $body = Json::decodeIfJson($response->getBody());
 
-        if ($body['success'] === false) {
-            throw new FetchRatesException();
+        if (is_string($body)) {
+            throw new Exception('Unable to process the API response');
         }
 
         return $body['rates'];

@@ -2,7 +2,6 @@
 
 namespace billmn\exchanger\console\controllers;
 
-use billmn\exchanger\drivers\FetchRatesException;
 use billmn\exchanger\Exchanger;
 use craft\console\Controller;
 use yii\console\ExitCode;
@@ -17,7 +16,7 @@ class UpdateController extends Controller
     /**
      * @var string|null Exchange driver.
      */
-    public ?string $driver = 'exchange_rate';
+    public ?string $driver = 'exchange-rate';
 
     public function options($actionID): array
     {
@@ -33,23 +32,26 @@ class UpdateController extends Controller
      */
     public function actionIndex(): int
     {
+        $this->note('DRIVER: ' . $this->driver);
+
         $driverClass = Exchanger::getInstance()->driver($this->driver);
 
-        if (count($driverClass->getNonPrimaryCurrencies()) === 0) {
-            $this->note('There are no non-primary currencies');
+        $updated = $driverClass->updateRates();
 
-            return ExitCode::OK;
-        }
-
-        try {
-            $driverClass->updateRates();
-        } catch (FetchRatesException $e) {
-            $this->failure($e->getMessage());
+        if (count($updated) === 0) {
+            $this->failure('No conversion rate has been updated');
 
             return ExitCode::UNSPECIFIED_ERROR;
         }
 
-        $this->success('Exchange rates updated successfully');
+        $tableRows = $updated->map(fn($currency) => [
+            $currency['iso'],
+            $currency['rate'],
+        ]);
+
+        $this->table(['CURRENCY', 'RATE'], $tableRows->toArray());
+
+        $this->success('Done');
 
         return ExitCode::OK;
     }

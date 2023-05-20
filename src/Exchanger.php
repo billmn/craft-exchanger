@@ -5,7 +5,6 @@ namespace billmn\exchanger;
 use billmn\exchanger\drivers\Driver;
 use billmn\exchanger\models\Settings;
 use Craft;
-use craft\base\Model;
 use craft\base\Plugin;
 use craft\helpers\StringHelper;
 
@@ -21,7 +20,6 @@ use craft\helpers\StringHelper;
 class Exchanger extends Plugin
 {
     public string $schemaVersion = '1.0.0';
-    public bool $hasCpSettings = true;
 
     public static function config(): array
     {
@@ -43,19 +41,6 @@ class Exchanger extends Plugin
         });
     }
 
-    protected function createSettingsModel(): ?Model
-    {
-        return Craft::createObject(Settings::class);
-    }
-
-    protected function settingsHtml(): ?string
-    {
-        return Craft::$app->view->renderTemplate('exchanger/_settings.twig', [
-            'plugin' => $this,
-            'settings' => $this->getSettings(),
-        ]);
-    }
-
     private function attachEventHandlers(): void
     {
         // Register event handlers here ...
@@ -64,9 +49,8 @@ class Exchanger extends Plugin
 
     public function driver(string $name): ?Driver
     {
-        $class = StringHelper::toPascalCase($name);
-        $instance = __NAMESPACE__ . "\\drivers\\{$class}";
+        $class = __NAMESPACE__ . "\\drivers\\" . StringHelper::toPascalCase($name);
 
-        return new $instance();
+        return new $class();
     }
 }
